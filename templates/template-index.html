@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Randori jQuery QueryBuilder</title>
+
+  <link href="css/bootstrap.css" rel="stylesheet">
+  <link href="css/docs.min.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+  <link href="css/bootstrap-datepicker3.min.css" rel="stylesheet">
+  <link href="css/bootstrap-slider.min.css" rel="stylesheet">
+  <link href="css/selectize.bootstrap3.css" rel="stylesheet">
+  <link href="css/bootstrap-select.min.css" rel="stylesheet">
+  <link href="css/awesome-bootstrap-checkbox.css" rel="stylesheet">
+  <link href="css/query-builder.dark.css" rel="stylesheet">
+
+  <style>
+    #content {
+      background:#0074d9;
+      background:linear-gradient(135deg, #0074d9, #001f3f);
+    }
+  </style>
+
+  <script src="js/header/jquery-1.11.2.min.js"></script>
+  <script src="js/header/bootstrap.js"></script>
+  <script src="js/header/bootbox.js"></script>
+  <script src="js/header/docs.min.js"></script>
+  <script src="js/header/script.js"></script>
+</head>
+
+<body>
+  <div class="bs-docs-header" id="content">
+    <div class="container">
+      <h1>Randori JQuery Querybuilder Demo</h1>
+    </div>
+  </div>
+  
+  <div class="container bs-docs-container">
+    <div class="row">
+      <div class="col-md-9" role="main">
+
+
+<section class="bs-docs-section clearfix">
+  <h1 id="hostname" class="page-header">
+    API Endpoint: Hostname
+  </h1>
+  <p>This demo shows the basic features of the QueryBuilder. Click one of the blue buttons to trigger the validation and display the output.</p>
+  <div class="col-md-12">
+    <div id="builder-hostname"></div> 
+    <div class="btn-group">
+      <button class="btn btn-warning clear-rules" data-target="hostname">Clear Rules</button>
+      <button class="btn btn-info set-json" data-target="hostname">Reset rules</button>
+      <button class="btn btn-success show-json" data-target="hostname">Show rules JSON</button>
+      <button class="btn btn-primary show-base64" data-target="hostname">Show rules Base64</button>
+    </div>
+  </div>
+</section>
+
+<section class="bs-docs-section clearfix">
+  <h1 id="basic" class="page-header">
+    Basic
+  </h1>
+  <p>This demo shows the basic features of the QueryBuilder. Click one of the blue buttons to trigger the validation and display the output.</p>
+  <div class="col-md-12">
+    <div id="builder-basic"></div> 
+    <div class="btn-group">
+      <button class="btn btn-warning clear-rules" data-target="basic">Clear Rules</button>
+      <button class="btn btn-info set-json" data-target="basic">Reset rules</button>
+      <button class="btn btn-success show-json" data-target="basic">Show rules JSON</button>
+      <button class="btn btn-primary show-base64" data-target="basic">Show rules Base64</button>
+    </div>
+  </div>
+</section>
+
+
+<section class="bs-docs-section clearfix">
+  <h1 id="widgets" class="page-header">
+    Widgets
+  </h1>
+
+  <div class="col-md-12">
+    <div id="builder-widgets"></div>
+    <div class="btn-group">
+      <button class="btn btn-warning clear-rules" data-target="widgets">Clear rules</button>
+      <button class="btn btn-info set-json" data-target="widgets">Reset rules</button>
+      <button class="btn btn-success show-json" data-target="widgets">Show rules JSON</button>
+    </div>
+  </div>
+</section>
+
+
+<script src="js/bootstrap/moment.min.js"></script>
+<script src="js/bootstrap/bootstrap-datepicker.js"></script>
+<script src="js/bootstrap/bootstrap-slider.js"></script>
+<script src="js/bootstrap/selectize.js"></script>
+<script src="js/bootstrap/bootstrap-select.js"></script>
+<script src="js/query-builder.standalone.js"></script>
+<script src="js/bootstrap/interact.js"></script>
+
+<script src="js/demo-basic.js"></script>
+<script src="js/hostname.js"></script>
+<script src="js/demo-widgets.js"></script>
+<script src="js/demo.js"></script>
+
+<style>
+  .code-popup {
+    max-height: 500px;
+  }
+</style>
+
+</body>
+</html>
+
+

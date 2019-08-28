@@ -3,6 +3,7 @@ import shutil
 import os
 import argparse
 import sys
+import subprocess
 
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
@@ -15,8 +16,6 @@ def copytree(src, dst, symlinks=False, ignore=None):
         else:
             if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
                 shutil.copy2(s, d)
-                shutil.copystat(s, d)
-
 
 def build_website(api_file, output_dir):
     with open('templates/template-index-start.html', 'r') as s:
@@ -218,5 +217,9 @@ if __name__ == "__main__":
         os.chdir('framework')
         copytree('.', output_dir)
         os.chdir('..')
+        try:
+            subprocess.run(['restorecon', '-r', '/usr/share/nginx/html/randori/'])
+        except FileNotFoundError:
+            pass
 
     build_website(api_file, output_dir)

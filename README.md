@@ -1,4 +1,4 @@
-#Automatic Randori Querybuilder Website Generator
+# Automatic Randori Querybuilder Website Generator
 
 This repo is intended to be an easy to use tool to generate a self-contained web page that can be used to generate queries for use with the Randori API.
 
@@ -6,7 +6,7 @@ The web page, CSS files and JavaScript files are all either contained in the rep
 
 The one file that is needed, but not provided in the repo is the API specification file [randori-api.json](https://alpha.randori.io/openapi) (must be authenticated to access).
 
-##Useage
+## Useage
 ```
 usage: site_builder.py [-h] -i INPUT -o OUTPUT [-s]
 

@@ -37,7 +37,7 @@ The working directory and its contents
 
 ---
 
-The contents of the default nginx web root directory.  <br />
+The contents of the default nginx web root directory.<br />
 Note the one addition to the directory, the randori directory with ownership set to my user account.
 ![Web Root Directory and Contents](docs/images/readme_3.png)
 
@@ -48,7 +48,6 @@ The contents of the randori directory located in the root to the nginx web root.
 
 ---
 
-<br />
 Screenshot of the default web page.
 ![default web page](docs/images/readme_5.png)
 

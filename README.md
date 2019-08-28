@@ -35,25 +35,40 @@ The working directory and its contents
 ![Working Directory Screenshot](docs/images/readme_1.png)
 ![Directory Contents](docs/images/readme_2.png)
 
-The contents of the default nginx web root directory.
+---
+
+The contents of the default nginx web root directory.  <br />
 Note the one addition to the directory, the randori directory with ownership set to my user account.
 ![Web Root Directory and Contents](docs/images/readme_3.png)
+
+---
 
 The contents of the randori directory located in the root to the nginx web root.
 ![randori directory contents](docs/images/readme_4.png)
 
+---
+
+<br />
 Screenshot of the default web page.
 ![default web page](docs/images/readme_5.png)
+
+---
 
 Screenshot of the error when trying to browse to the /randori path before running the script.
 ![randory 403](docs/images/readme_6.png)
 
-Screenshot of running the script with the 'setup' flag and the output, aka "Done".
+---
+
+Screenshot of running the script with the 'setup' flag and the output, aka "Done".  
 ``` python site_builder.py -i ../../randori-api.json -o /usr/share/nginx/html/randori/ -s ```
 ![script commandline](docs/images/readme_7.png)
 
+---
+
 Screenshot of the randori directory in the nginx web root directory after having run the script.
 ![randori directory filled](docs/images/readme_8.png)
+
+---
 
 Screenshot of the now rendering web page located at the /randori path after having run the script.
 ![working web page](docs/images/readme_9.png)

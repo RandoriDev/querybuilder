@@ -1,9 +1,9 @@
-import json
-import shutil
 import os
-import argparse
 import sys
+import shutil
 import subprocess
+import argparse
+import json
 
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
@@ -14,111 +14,68 @@ def copytree(src, dst, symlinks=False, ignore=None):
         if os.path.isdir(s):
             copytree(s, d, symlinks, ignore)
         else:
-            if not os.path.exists(d) or os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
+            if not os.path.exists(d) or \
+            os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
                 shutil.copy2(s, d)
 
 def build_website(api_file, output_dir):
-    with open('templates/template-index-start.html', 'r') as s:
-        html_start_string = s.read()
+    with open('templates/template-index-start.html', 'r') as e:
+        html_str_1 = e.read()
     
-    section_string = ''
+    with open('templates/template-index-middle.html', 'r') as e:
+        html_str_2 = e.read()
     
-    with open('templates/template-index-middle.html', 'r') as m:
-        html_middle_string = m.read()
+    with open('templates/template-index-end.html', 'r') as e: 
+        html_str_3 = e.read() 
+        
+    with open('templates/confidence_filter', 'r') as e:
+        con_filt_str = e.read()
+
+    with open('templates/target_temptation_filter', 'r') as e:
+        tt_filt_str = e.read()
+    
+    sect_str = ''
     
     js_sources_string = ''
     
-    with open('templates/template-index-end.html', 'r') as e: 
-        html_end_string = e.read() 
-        
-        
-    javascript_close_string = '\n});'
-    
-    confidence_filter_string = """
-      {
-        id: 'table.confidence',
-        label: 'Confidence',
-        type: 'integer',
-        plugin: 'selectize',
-        plugin_config: {
-          valueField: 'val',
-          labelField: 'name',
-          searchField: 'name',
-          sortField: 'val',
-            create: true,
-            maxItems: 1,
-            plugins: ['remove_button'],
-            onInitialize: function() {
-              var that = this;
-              $.getJSON('data/confidence-levels.json', function(data) {
-                data.forEach(function(item) {
-                  that.addOption(item);
-                });
-              });
-            }
-          },
-          valueSetter: function(rule, value) {
-            rule.$el.find('.rule-value-container input')[0].selectize.setValue(value);
-          }
-      }"""
-        
-    target_temptation_filter_string = """
-      {
-        id: 'table.target_temptation',
-        label: 'Target Temptation',
-        type: 'integer',
-        plugin: 'selectize',
-        plugin_config: {
-          valueField: 'val',
-          labelField: 'name',
-          searchField: 'name',
-          sortField: 'val',
-          create: true,
-          maxItems: 1,
-          plugins: ['remove_button'],
-          onInitialize: function() {
-            var that = this;
-            $.getJSON('data/target-temptation-levels.json', function(data) {
-              data.forEach(function(item) {
-                that.addOption(item);
-              });
-            });
-          }
-        },
-        valueSetter: function(rule, value) {
-          rule.$el.find('.rule-value-container input')[0].selectize.setValue(value);
-        }
-      }"""
+    js_close_string = '\n});'
     
     with open(api_file, 'r') as af:
         datastore = json.load(af)
         
     schemas = datastore['components']['schemas']
     
-    for dash_thing in schemas.keys():
+    for dash_endpoint in sorted(schemas.keys()):
         try:
-            schemas[dash_thing]['required']
             filters = []
-            thing = dash_thing.replace('-', '_');
+            schemas[dash_endpoint]['required']
+            endpoint = dash_endpoint.replace('-', '_');
             
-            append_confidence_filter = False
-            append_target_temptation_filter = False
+            append_conf_filt = False
+            append_tt_filter = False
             
             
-            for k,v in sorted(schemas[dash_thing]['properties'].items()):
+            for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
                 if v['type'] == 'object':
-                    # Do not process things with an "object" type (aka Tags)
-                    #  Have not worked out the javascipt mechanics to do a new type
+                    # Don't process endpoints with an 'object' type (aka Tags).
+                    # I have not worked out the javascipt to do a new type.
                     continue
+
                 if k == 'confidence':
-                    append_confidence_filter = True
+                    append_conf_filt = True
+
                 if k == 'target_temptation':
-                    append_target_temptation_filter = True
+                    append_tt_filter = True
             
-                if not k in ['confidence', 'target_temptation', 'deleted', 'tags', 'org_id', 'name_type']:
+                if not k in ['confidence', 'target_temptation', 
+                                'deleted', 'tags', 'org_id']:
                     filter_dict = {}
+
                     filter_dict['id'] = 'table.' + k
-                    filter_dict['label'] = ' '.join(map(lambda s: s.capitalize(),k.split('_')))
+
+                    filter_dict['label'] = ' '.join(
+                        map(lambda s: s.capitalize(),k.split('_'))
+                        )
     
                     if v['type'] == 'number':
                         filter_dict['type'] = 'double'
@@ -129,50 +86,58 @@ def build_website(api_file, output_dir):
                         filter_dict['type'] = 'date'
                         filter_dict['validation'] = {'format': 'MM/DD/YYYY'}
                         filter_dict['plugin'] = 'datepicker'
-                        filter_dict['plugin_config'] = { 'format': 'mm/dd/yyyy',  'todayBtn': 'linked', 'todayHighlight': True, 'autoclose': True }
+                        filter_dict['plugin_config'] = { 
+                                                    'format': 'mm/dd/yyyy', 
+                                                    'todayBtn': 'linked', 
+                                                    'todayHighlight': True, 
+                                                    'autoclose': True }
             
                     filters.append(filter_dict)
             
             
-            filter_string = json.dumps(filters, indent=2).replace('"','\'')
+            filt_string = json.dumps(filters, indent=2).replace('"','\'')
             
-            if append_confidence_filter:
-                filter_string = filter_string.rstrip(']').rstrip('\n') + "," + confidence_filter_string + "\n]"
+            if append_conf_filt:
+                filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
+                                con_filt_str + '\n]'
             
-            if append_target_temptation_filter:
-                filter_string = filter_string.rstrip(']').rstrip('\n') + "," + target_temptation_filter_string + "\n]"
+            if append_tt_filter:
+                filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
+                                tt_filt_str + '\n]'
             
+            #default rule filename
+            drf = 'templates/default_rules/{}.js'.format(endpoint)
             
-            default_rule_filename = "templates/default_rules/{}.js".format(thing)
-            
-            with open(default_rule_filename, 'r') as d :
-                default_rules_string = d.read()
+            with open(drf, 'r') as d :
+                def_rules_str = d.read()
             
             with open('templates/template-javascript.js', 'r') as j:
-                javascript_source_code = j.read().rstrip('\n')
+                js_source_code = j.read().rstrip('\n')
             
-            entire_thing = default_rules_string + javascript_source_code + filter_string + javascript_close_string
+            js_str = ''.join([def_rules_str, js_source_code, 
+                                filt_string, js_close_string])
             
-            entire_thing = entire_thing.replace('REPLACEME', thing)
+            js_str = js_str.replace('REPLACEME', endpoint)
             
-            output_filename = '{}/js/randori/{}.js'.format(output_dir, thing)
+            output_filename = '{}/js/randori/{}.js'.format(output_dir, 
+                                                            endpoint)
             
             with open(output_filename, 'w+') as o:
-                o.write(entire_thing)
+                o.write(js_str)
             
             
             with open('templates/template-index-section.html', 'r') as f:
-                section_string = section_string + f.read().replace('REPLACEME', thing)
+                sect_str = sect_str + f.read().replace('REPLACEME', endpoint)
             
-            js_sources_string = js_sources_string + '<script src="js/randori/REPLACEME.js"></script>\n'.replace('REPLACEME', thing)
+            js_sources_string = js_sources_string + \
+                '<script src="js/randori/{}.js"></script>\n'.format(endpoint)
     
         except KeyError:
             pass
             
     
-    
-    
-    full_page = html_start_string + section_string + html_middle_string + js_sources_string + html_end_string
+    full_page = ''.join([html_str_1, sect_str, html_str_2, 
+                        js_sources_string, html_str_3])
     
     index_outfile = '{}/index.html'.format(output_dir)
 
@@ -181,35 +146,53 @@ def build_website(api_file, output_dir):
         
     print ('Done')
     
-if __name__ == "__main__":
+if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description = "")
+    parser = argparse.ArgumentParser(description = '')
+
     optional = parser._action_groups.pop()
+
     required = parser.add_argument_group('required arguments')
-    required.add_argument("-i", "--input", required=True, help="File containing the Randori API Spec.")
-    required.add_argument("-o", "--output", required=True, help="Directory in which to write the generated files.")
-    optional.add_argument("-s", "--setup", default=False, action="store_true",
-        help="If the setup arg/flag is provided, copy the contents of the 'framework' directory to the output directory.")
+
+    required.add_argument('-i', '--input', 
+                    required=True, 
+                    help='File containing the Randori API Spec.')
+
+    required.add_argument('-o', '--output', 
+                    required=True, 
+                    help='Directory in which to write the generated files.')
+
+    optional.add_argument('-s', '--setup', default=False, action='store_true',
+                            help='If the setup arg/flag is provided, copy the\
+                            contents of the "framework" directory to the\
+                            output directory.')
+
     parser._action_groups.append(optional)
 
     args = parser.parse_args()
 
     if not args.input:
-        print("No Randori API Spec file provided.  Rerun the script with -i <randori-api-spec.json>")
+        print('No Randori API Spec file provided.  \
+                Rerun the script with -i <randori-api-spec.json>')
     
     api_file = args.input
 
     if not args.output:
-        print("No output directory defined.  Rerun the script with -o </output/directory/name>")
+        print('No output directory defined.  \
+                Rerun the script with -o </output/directory/name>')
         sys.exit(1)
 
     output_dir = args.output
+
     if not ( os.path.isdir(output_dir)):
-        print ("{} does not exist.  Please create the directory and run the script again.".format(output_dir))
+        print ('{} does not exist.  Please create the directory and \
+                run the script again.'.format(output_dir))
         sys.exit(1)
 
     if not (os.access(output_dir, os.W_OK) and os.access(output_dir, os.X_OK)):
-        print ("{} is not writeable by the current user.  Please change the permissions on the directory and run the script again.".format(output_dir))
+        print ('{} is not writeable by the current user.  \
+                Please change the permissions on the directory \
+                and run the script again.'.format(output_dir))
         sys.exit(1)
 
 
@@ -217,9 +200,14 @@ if __name__ == "__main__":
         os.chdir('framework')
         copytree('.', output_dir)
         os.chdir('..')
-        try:
-            subprocess.run(['restorecon', '-r', '/usr/share/nginx/html/randori/'])
-        except FileNotFoundError:
-            pass
+
+        if os.path.isfile('/etc/selinux/config'):
+            with open('/etc/selinux/config', 'r') as sel:
+                if 'SELINUX=enforcing' in sel.read():
+                    try:
+                        subprocess.run(['restorecon', '-r', output_dir])
+                    except FileNotFoundError:
+                        pass
 
     build_website(api_file, output_dir)
+

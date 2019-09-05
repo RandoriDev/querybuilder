@@ -171,16 +171,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if not args.input:
-        print('No Randori API Spec file provided.  \
-Rerun the script with -i <randori-api-spec.json>')
-    
     api_file = args.input
-
-    if not args.output:
-        print('No output directory defined.  \
-Rerun the script with -o </output/directory/name>')
-        sys.exit(1)
 
     output_dir = args.output
 

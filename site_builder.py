@@ -173,26 +173,26 @@ if __name__ == '__main__':
 
     if not args.input:
         print('No Randori API Spec file provided.  \
-                Rerun the script with -i <randori-api-spec.json>')
+Rerun the script with -i <randori-api-spec.json>')
     
     api_file = args.input
 
     if not args.output:
         print('No output directory defined.  \
-                Rerun the script with -o </output/directory/name>')
+Rerun the script with -o </output/directory/name>')
         sys.exit(1)
 
     output_dir = args.output
 
     if not ( os.path.isdir(output_dir)):
         print ('{} does not exist.  Please create the directory and \
-                run the script again.'.format(output_dir))
+run the script again.'.format(output_dir))
         sys.exit(1)
 
     if not (os.access(output_dir, os.W_OK) and os.access(output_dir, os.X_OK)):
         print ('{} is not writeable by the current user.  \
-                Please change the permissions on the directory \
-                and run the script again.'.format(output_dir))
+Please change the permissions on the directory \
+and run the script again.'.format(output_dir))
         sys.exit(1)
 
 

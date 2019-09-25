@@ -525,6 +525,7 @@ $.extend(QueryBuilder.prototype, /** @lends QueryBuilder.prototype */ {
  * @private
  */
 QueryBuilder.types = {
+    'object':   'object',
     'string':   'string',
     'integer':  'number',
     'double':   'number',
@@ -615,8 +616,8 @@ QueryBuilder.regional = {};
  * @readonly
  */
 QueryBuilder.OPERATORS = {
-    equal:            { type: 'equal',            nb_inputs: 1, multiple: false, apply_to: ['string', 'number', 'datetime', 'boolean'] },
-    not_equal:        { type: 'not_equal',        nb_inputs: 1, multiple: false, apply_to: ['string', 'number', 'datetime', 'boolean'] },
+    equal:            { type: 'equal',            nb_inputs: 1, multiple: false, apply_to: ['object', 'string', 'number', 'datetime', 'boolean'] },
+    not_equal:        { type: 'not_equal',        nb_inputs: 1, multiple: false, apply_to: ['object', 'string', 'number', 'datetime', 'boolean'] },
     in:               { type: 'in',               nb_inputs: 1, multiple: true,  apply_to: ['string', 'number', 'datetime'] },
     not_in:           { type: 'not_in',           nb_inputs: 1, multiple: true,  apply_to: ['string', 'number', 'datetime'] },
     less:             { type: 'less',             nb_inputs: 1, multiple: false, apply_to: ['number', 'datetime'] },
@@ -627,14 +628,18 @@ QueryBuilder.OPERATORS = {
     not_between:      { type: 'not_between',      nb_inputs: 2, multiple: false, apply_to: ['number', 'datetime'] },
     begins_with:      { type: 'begins_with',      nb_inputs: 1, multiple: false, apply_to: ['string'] },
     not_begins_with:  { type: 'not_begins_with',  nb_inputs: 1, multiple: false, apply_to: ['string'] },
-    contains:         { type: 'contains',         nb_inputs: 1, multiple: false, apply_to: ['string'] },
-    not_contains:     { type: 'not_contains',     nb_inputs: 1, multiple: false, apply_to: ['string'] },
+    contains:         { type: 'contains',         nb_inputs: 1, multiple: false, apply_to: ['object', 'string'] },
+    not_contains:     { type: 'not_contains',     nb_inputs: 1, multiple: false, apply_to: ['object', 'string'] },
+    contained_by:     { type: 'contained_by',     nb_inputs: 1, multiple: false, apply_to: ['object'] },
+    not_contained_by: { type: 'not_contained_by', nb_inputs: 1, multiple: false, apply_to: ['object'] },
     ends_with:        { type: 'ends_with',        nb_inputs: 1, multiple: false, apply_to: ['string'] },
     not_ends_with:    { type: 'not_ends_with',    nb_inputs: 1, multiple: false, apply_to: ['string'] },
     is_empty:         { type: 'is_empty',         nb_inputs: 0, multiple: false, apply_to: ['string'] },
     is_not_empty:     { type: 'is_not_empty',     nb_inputs: 0, multiple: false, apply_to: ['string'] },
-    is_null:          { type: 'is_null',          nb_inputs: 0, multiple: false, apply_to: ['string', 'number', 'datetime', 'boolean'] },
-    is_not_null:      { type: 'is_not_null',      nb_inputs: 0, multiple: false, apply_to: ['string', 'number', 'datetime', 'boolean'] }
+    is_null:          { type: 'is_null',          nb_inputs: 0, multiple: false, apply_to: ['object', 'string', 'number', 'datetime', 'boolean'] },
+    is_not_null:      { type: 'is_not_null',      nb_inputs: 0, multiple: false, apply_to: ['object', 'string', 'number', 'datetime', 'boolean'] },
+    has_key:          { type: 'has_key',          nb_inputs: 1, multiple: false, apply_to: ['object'] },
+    not_has_key:      { type: 'not_has_key',      nb_inputs: 1, multiple: false, apply_to: ['object'] }
 };
 
 /**
@@ -2495,6 +2500,16 @@ QueryBuilder.prototype._validateValue = function(rule, value) {
                             if (tmp !== 'true' && tmp !== 'false' && tmp !== '1' && tmp !== '0' && tempValue[j] !== 1 && tempValue[j] !== 0) {
                                 result = ['boolean_not_valid'];
                                 break;
+
+                        case 'object':
+                            if (tempValue[j].__proto__ == String()){
+                               break;
+                            }
+                            try {
+                                JSON.parse(JSON.stringify(tempValue[j]));
+                            } catch (err) {
+                                result = [err.message];
+                                break;
                             }
                     }
 
@@ -3423,6 +3438,10 @@ Utils.changeType = function(value, type) {
                 return value;
             }
             return value === true || value === 1 || value.toLowerCase() === 'true' || value === '1';
+        case 'object':
+            if (value.indexOf('{') == -1){
+                return value
+            }
         default: return value;
         // @formatter:on
     }

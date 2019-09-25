@@ -56,10 +56,10 @@ def build_website(api_file, output_dir):
             
             
             for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
-                if v['type'] == 'object':
+                #if v['type'] == 'object':
                     # Don't process endpoints with an 'object' type (aka Tags).
                     # I have not worked out the javascipt to do a new type.
-                    continue
+                    #continue
 
                 if k == 'confidence':
                     append_conf_filt = True
@@ -68,7 +68,7 @@ def build_website(api_file, output_dir):
                     append_tt_filter = True
             
                 if not k in ['confidence', 'target_temptation', 
-                                'deleted', 'tags', 'org_id']:
+                                'deleted']:
                     filter_dict = {}
 
                     filter_dict['id'] = 'table.' + k

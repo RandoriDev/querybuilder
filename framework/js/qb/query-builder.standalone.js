@@ -708,7 +708,9 @@ QueryBuilder.DEFAULTS = {
         'is_empty',
         'is_not_empty',
         'is_null',
-        'is_not_null'
+        'is_not_null',
+        'has_key',
+        'not_has_key'
     ],
 
     icons: {
@@ -2500,7 +2502,7 @@ QueryBuilder.prototype._validateValue = function(rule, value) {
                             if (tmp !== 'true' && tmp !== 'false' && tmp !== '1' && tmp !== '0' && tempValue[j] !== 1 && tempValue[j] !== 0) {
                                 result = ['boolean_not_valid'];
                                 break;
-
+                            }
                         case 'object':
                             if (tempValue[j].__proto__ == String()){
                                break;
@@ -6157,7 +6159,9 @@ QueryBuilder.regional['en'] = {
     "is_empty": "is empty",
     "is_not_empty": "is not empty",
     "is_null": "is null",
-    "is_not_null": "is not null"
+    "is_not_null": "is not null",
+    "has_key": "has key",
+    "not_has_key": "doesn't have key"
   },
   "errors": {
     "no_filter": "No filter selected",

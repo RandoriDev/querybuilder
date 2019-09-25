@@ -33,6 +33,9 @@ def build_website(api_file, output_dir):
 
     with open('templates/target_temptation_filter', 'r') as e:
         tt_filt_str = e.read()
+
+    with open('templates/name_type_filter', 'r') as e:
+        name_type_filt_str = e.read()
     
     sect_str = ''
     
@@ -53,30 +56,36 @@ def build_website(api_file, output_dir):
             
             append_conf_filt = False
             append_tt_filter = False
+            append_name_type_filter = False
             
-            
-            for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
-                #if v['type'] == 'object':
-                    # Don't process endpoints with an 'object' type (aka Tags).
-                    # I have not worked out the javascipt to do a new type.
-                    #continue
+            sort_list = []
 
+            for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
+                
+                if not k == 'deleted':
+                    sort_list.append(k)
+                    
+                    sort_list.append(('<nobr>-' + k + '</nobr>'))
+                
                 if k == 'confidence':
                     append_conf_filt = True
-
+                
                 if k == 'target_temptation':
                     append_tt_filter = True
-            
-                if not k in ['confidence', 'target_temptation', 
-                                'deleted']:
+
+                if k == 'name_type':
+                    append_name_type_filter = True
+                
+                if not k in ['confidence', 'target_temptation', 'name_type', 'deleted']:
+                    
                     filter_dict = {}
-
+                    
                     filter_dict['id'] = 'table.' + k
-
+                    
                     filter_dict['label'] = ' '.join(
                         map(lambda s: s.capitalize(),k.split('_'))
                         )
-    
+                    
                     if v['type'] == 'number':
                         filter_dict['type'] = 'double'
                     else:
@@ -105,6 +114,10 @@ def build_website(api_file, output_dir):
                 filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
                                 tt_filt_str + '\n]'
             
+            if append_name_type_filter:
+                filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
+                                name_type_filt_str + '\n]'
+
             #default rule filename
             drf = 'templates/default_rules/{}.js'.format(endpoint)
             
@@ -125,13 +138,17 @@ def build_website(api_file, output_dir):
             with open(output_filename, 'w+') as o:
                 o.write(js_str)
             
-            
+            sort_str = ', '.join(sort_list)
+
+            sort_str = sort_str + '\n<section>\n'
+
             with open('templates/template-index-section.html', 'r') as f:
                 sect_str = sect_str + f.read().replace('REPLACEME', endpoint)
+                sect_str = sect_str + sort_str
             
             js_sources_string = js_sources_string + \
                 '<script src="js/randori/{}.js"></script>\n'.format(endpoint)
-    
+
         except KeyError:
             pass
             

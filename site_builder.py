@@ -5,6 +5,8 @@ import subprocess
 import argparse
 import json
 
+assert sys.version_info >= (3, 0), "This script requires the use of Python 3"
+
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
         os.makedirs(dst)

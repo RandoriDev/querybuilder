@@ -1,0 +1,17 @@
+Change directory into the create_randori_querybuilder_website directory:
+cd ~/pythbon/create_randori_querybuilder_website/
+
+Run the python script to generate the new website using the updated API spec and writing the output to the bigblueswope.github.io directory:
+python site_builder.py -i ~/python/openapi_generator/randori-api.json -o ~/python/bigblueswope.github.io/ -s
+
+cd into the bigblueswope.github.io directory:
+cd ~/python/bigblueswope.github.io/
+
+Add the changed files to git
+git add *
+
+Commit the changes
+git commit -m "Description of changes"
+
+Push changes to github:
+git push master

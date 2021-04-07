@@ -1,0 +1,6 @@
+[
+    { "val": "None", "name": "None" }, 
+    { "val": "Low", "name": "Low" },
+    { "val": "Medium", "name": "Medium"},
+    { "val": "High", "name": "High"}
+]

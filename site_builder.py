@@ -1,4 +1,6 @@
+import copy
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -6,6 +8,56 @@ import argparse
 import json
 
 assert sys.version_info >= (3, 0), "This script requires the use of Python 3"
+
+
+hostname_default_rule='''var rules_REPLACEME = {
+  condition: 'AND',
+  rules: [{
+    id: 'table.confidence',
+    operator: 'greater_or_equal',
+    value: 60
+  }, {
+    condition: 'OR',
+    rules: [{
+      id: 'table.hostname',
+      operator: 'not_ends_with',
+      value: 'foo.com'
+    }, {
+      id: 'table.target_temptation',
+      operator: 'greater_or_equal',
+      value: 15
+    }]
+  }]
+};'''
+
+
+default_rule='''var rules_REPLACEME = {
+  condition: "AND",
+  rules: [
+    {
+      id: "table.confidence",
+      operator: "greater_or_equal",
+      value: 60
+    }
+  ]
+};'''
+
+
+ep_wo_confidence_rule='''var rules_REPLACEME = {
+  condition: "AND",
+  rules: [
+    {
+      id: "table.id",
+      operator: "equal",
+      value: "<uuid_here>"
+    }
+  ]
+};'''
+
+
+
+
+
 
 def copytree(src, dst, symlinks=False, ignore=None):
     if not os.path.exists(dst):
@@ -20,6 +72,47 @@ def copytree(src, dst, symlinks=False, ignore=None):
             os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
                 shutil.copy2(s, d)
 
+def labelize(field_name):
+
+    lbl = ' '.join(map(lambda s: s.capitalize(),field_name.split('_')))
+
+    return lbl
+
+
+def craft_selectize_string(field_name):
+
+    lbl = labelize(field_name)
+
+    ss = '''  {
+    id: 'table.xxxfield_namexxx',
+    label: 'xxxlblxxx',
+    type: 'integer',
+    plugin: 'selectize',
+    plugin_config: {
+      valueField: 'val',
+      labelField: 'name',
+      searchField: 'name',
+      sortField: 'val',
+      create: true,
+      maxItems: 1,
+      plugins: ['remove_button'],
+      onInitialize: function() {
+        var that = this;
+        $.getJSON('data/xxxfield_namexxx.json', function(data) {
+          data.forEach(function(item) {
+            that.addOption(item);
+          });
+        });
+      }
+    },
+    valueSetter: function(rule, value) {
+      rule.$el.find('.rule-value-container input')[0].selectize.setValue(value);
+    }
+  }'''.replace('xxxfield_namexxx', field_name).replace('xxxlblxxx', lbl)
+
+    return ss
+
+
 def build_website(api_file, output_dir):
     with open('templates/template-index-start.html', 'r') as e:
         html_str_1 = e.read()
@@ -30,119 +123,117 @@ def build_website(api_file, output_dir):
     with open('templates/template-index-end.html', 'r') as e: 
         html_str_3 = e.read() 
         
-    with open('templates/confidence_filter', 'r') as e:
-        con_filt_str = e.read()
-
-    with open('templates/target_temptation_filter', 'r') as e:
-        tt_filt_str = e.read()
-
-    with open('templates/name_type_filter', 'r') as e:
-        name_type_filt_str = e.read()
-    
     sect_str = ''
     
     js_sources_string = ''
-    
-    js_close_string = '\n});'
     
     with open(api_file, 'r') as af:
         datastore = json.load(af)
         
     schemas = datastore['components']['schemas']
     
+    do_not_includes = ['querybuilder_rule_group_schema', 'querybuilder_rule_group_schema_2',
+                       'querybuilder_rule_group_schema_3', 'querybuilder_rule_group_schema_4',
+                       'querybuilder_rule_schema', 'saved_views_model_custom_in', 
+                       'saved_views_patch_in']
+
     for dash_endpoint in sorted(schemas.keys()):
+
         try:
+
             filters = []
             schemas[dash_endpoint]['required']
             endpoint = dash_endpoint.replace('-', '_');
-            
-            append_conf_filt = False
-            append_tt_filter = False
-            append_name_type_filter = False
+
+            if endpoint in do_not_includes:
+
+                continue
             
             sort_list = []
 
+            specials = ['confidence', 'name_type', 'priority_score', 'status', 'target_temptation']
+
             for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
                 
-                if not k == 'deleted':
-                    sort_list.append(k)
-                    
-                    sort_list.append(('<nobr>-' + k + '</nobr>'))
-                
-                if k == 'confidence':
-                    append_conf_filt = True
-                
-                if k == 'target_temptation':
-                    append_tt_filter = True
+                # skip deleted because it is not cust facing
+                # skip all_ports because it is an array and jquery Querybuilder does not support array types
+                if k in ['deleted', 'all_ports']:
 
-                if k == 'name_type':
-                    append_name_type_filter = True
+                    continue
+
+                sort_list.append(f'<nobr>{k}, -{k}</nobr>')
+
+                if k in specials:
+
+                    filters.append(k)
+
+                    continue
+                    
+                filter_dict = {}
                 
-                if not k in ['confidence', 'target_temptation', 'name_type', 'deleted']:
-                    
-                    filter_dict = {}
-                    
-                    filter_dict['id'] = 'table.' + k
-                    
-                    filter_dict['label'] = ' '.join(
-                        map(lambda s: s.capitalize(),k.split('_'))
-                        )
-                    
-                    if v['type'] == 'number':
-                        filter_dict['type'] = 'double'
-                    else:
-                        filter_dict['type'] = v['type']
-            
-                    if k in ['first_seen', 'last_seen' ]:
-                        filter_dict['type'] = 'date'
-                        filter_dict['validation'] = {'format': 'MM/DD/YYYY'}
-                        filter_dict['plugin'] = 'datepicker'
-                        filter_dict['plugin_config'] = { 
-                                                    'format': 'mm/dd/yyyy', 
-                                                    'todayBtn': 'linked', 
-                                                    'todayHighlight': True, 
-                                                    'autoclose': True }
-            
-                    filters.append(filter_dict)
+                filter_dict['id'] = f'table.{k}'
+                
+                filter_dict['label'] = labelize(k)
+                
+                if v['type'] == 'number':
+                    filter_dict['type'] = 'double'
+                else:
+                    filter_dict['type'] = v['type']
+        
+                if k in ['first_seen', 'last_seen' ]:
+                    filter_dict['type'] = 'date'
+                    filter_dict['validation'] = {'format': 'MM/DD/YYYY'}
+                    filter_dict['plugin'] = 'datepicker'
+                    filter_dict['plugin_config'] = { 
+                                                'format': 'mm/dd/yyyy', 
+                                                'todayBtn': 'linked', 
+                                                'todayHighlight': True, 
+                                                'autoclose': True }
+        
+                filters.append(filter_dict)
             
             
             filt_string = json.dumps(filters, indent=2).replace('"','\'')
-            
-            if append_conf_filt:
-                filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
-                                con_filt_str + '\n]'
-            
-            if append_tt_filter:
-                filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
-                                tt_filt_str + '\n]'
-            
-            if append_name_type_filter:
-                filt_string = filt_string.rstrip(']').rstrip('\n') + ',' + \
-                                name_type_filt_str + '\n]'
 
-            #default rule filename
-            drf = 'templates/default_rules/{}.js'.format(endpoint)
+            for special in specials:
+
+                new_str = craft_selectize_string(special)
+
+                foo = f"  '{special}'"
+
+                tmpstr = re.sub(foo, new_str, filt_string)
+
+                filt_string = copy.deepcopy(tmpstr)
             
-            with open(drf, 'r') as d :
-                def_rules_str = d.read()
+            if endpoint == 'hostname':
+
+                def_rules_str = hostname_default_rule
+
+            elif endpoint in ['artifact', 'detection', 'saved_views']:
+
+                def_rules_str = ep_wo_confidence_rule
+
+            else:
+
+                def_rules_str = default_rule
+
             
             with open('templates/template-javascript.js', 'r') as j:
                 js_source_code = j.read().rstrip('\n')
             
             js_str = ''.join([def_rules_str, js_source_code, 
-                                filt_string, js_close_string])
+                                filt_string, '\n});'])
             
             js_str = js_str.replace('REPLACEME', endpoint)
             
-            output_filename = '{}/js/randori/{}.js'.format(output_dir, 
-                                                            endpoint)
+            output_filename = f'{output_dir}/js/randori/{endpoint}.js'
             
             with open(output_filename, 'w+') as o:
                 o.write(js_str)
             
             sort_str = ', '.join(sort_list)
 
-            sort_str = sort_str + '\n<section>\n'
+            sort_str = f'{sort_str}\n<section>\n'
 
             with open('templates/template-index-section.html', 'r') as f:
                 sect_str = sect_str + f.read().replace('REPLACEME', endpoint)
@@ -158,7 +249,7 @@ def build_website(api_file, output_dir):
     full_page = ''.join([html_str_1, sect_str, html_str_2, 
                         js_sources_string, html_str_3])
     
-    index_outfile = '{}/index.html'.format(output_dir)
+    index_outfile = f'{output_dir}/index.html'
 
     with open(index_outfile, 'w+') as o:
         o.write(full_page)

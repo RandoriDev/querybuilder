@@ -1,0 +1,8 @@
+[
+    { "val": "None", "name": "None" }, 
+    { "val": "Accepted", "name": "Accepted" },
+    { "val": "Mitigated", "name": "Mitigated"},
+    { "val": "Needs Review", "name": "Needs Review"},
+    { "val": "Needs Resolution", "name": "Needs Resolution"},
+    { "val": "Needs Investigation", "name": "Needs Investigation"}
+]

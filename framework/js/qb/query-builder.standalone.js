@@ -2133,7 +2133,7 @@ QueryBuilder.prototype.getRules = function(options) {
 
     }(this.model.root));
 
-    out.valid = valid;
+    //out.valid = valid;
 
     /**
      * Modifies the result of the {@link QueryBuilder#getRules} method
@@ -4154,6 +4154,7 @@ $.fn.queryBuilder = function(option) {
     if (!data && option == 'destroy') {
         return this;
     }
+
     if (!data) {
         var builder = new QueryBuilder(this, options);
         this.data('queryBuilder', builder);

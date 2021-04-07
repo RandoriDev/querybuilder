@@ -1,4 +1,0 @@
-[
-    { "name": "Min", "val": 0 }, { "name": "Low", "val": 25 }, { "name": "Medium", "val":60 }, { "name": "High", "val": 75 }, { "name": "Extreme", "val": 90 }, { "name": "Max", "val": 100 }
-]
-

@@ -28,7 +28,8 @@ hostname_default_rule='''var rules_REPLACEME = {
       value: 15
     }]
   }]
-};'''
+};
+'''
 
 
 default_rule='''var rules_REPLACEME = {
@@ -40,7 +41,8 @@ default_rule='''var rules_REPLACEME = {
       value: 60
     }
   ]
-};'''
+};
+'''
 
 
 ep_wo_confidence_rule='''var rules_REPLACEME = {
@@ -52,7 +54,8 @@ ep_wo_confidence_rule='''var rules_REPLACEME = {
       value: "<uuid_here>"
     }
   ]
-};'''
+};
+'''
 
 
 
@@ -72,6 +75,7 @@ def copytree(src, dst, symlinks=False, ignore=None):
             os.stat(s).st_mtime - os.stat(d).st_mtime > 1:
                 shutil.copy2(s, d)
 
+
 def labelize(field_name):
 
     lbl = ' '.join(map(lambda s: s.capitalize(),field_name.split('_')))
@@ -79,14 +83,14 @@ def labelize(field_name):
     return lbl
 
 
-def craft_selectize_string(field_name):
+def craft_selectize_string(field_name, picklist_data_type):
 
-    lbl = labelize(field_name)
+    lbl = labelize(field_name, )
 
     ss = '''  {
     id: 'table.xxxfield_namexxx',
     label: 'xxxlblxxx',
-    type: 'integer',
+    type: 'xxxdata_typexxx',
     plugin: 'selectize',
     plugin_config: {
       valueField: 'val',
@@ -98,17 +102,16 @@ def craft_selectize_string(field_name):
       plugins: ['remove_button'],
       onInitialize: function() {
         var that = this;
-        $.getJSON('data/xxxfield_namexxx.json', function(data) {
-          data.forEach(function(item) {
+        xxxfield_namexxx_json.forEach(function(item) {
             that.addOption(item);
           });
-        });
       }
     },
     valueSetter: function(rule, value) {
       rule.$el.find('.rule-value-container input')[0].selectize.setValue(value);
     }
-  }'''.replace('xxxfield_namexxx', field_name).replace('xxxlblxxx', lbl)
+  }'''.replace('xxxfield_namexxx', field_name).replace('xxxlblxxx', lbl).replace('xxxdata_typexxx', picklist_data_type)
+
 
     return ss
 
@@ -142,7 +145,9 @@ def build_website(api_file, output_dir):
         try:
 
             filters = []
+
             schemas[dash_endpoint]['required']
+
             endpoint = dash_endpoint.replace('-', '_');
 
             if endpoint in do_not_includes:
@@ -151,7 +156,31 @@ def build_website(api_file, output_dir):
             
             sort_list = []
 
-            specials = ['confidence', 'name_type', 'priority_score', 'status', 'target_temptation']
+            specials = {
+                'confidence': [ 'integer',
+                                { "name": "Min", "val": 0 },
+                                { "name": "Low", "val": 25 },
+                                { "name": "Medium", "val":60 },
+                                { "name": "High", "val": 75 },
+                                { "name": "Extreme", "val": 90 },
+                                { "name": "Max", "val": 100 }
+                ],
+                'name_type': [ 'integer',
+                                { "name": "Domain Name", "val": 0 },
+                                { "name": "Hostname", "val": 1 }
+                ],
+                'priority_score': [ 'double',
+                                    { "name": "Low", "val": 0 },
+                                    { "name": "Medium", "val": 20 },
+                                    { "name": "High", "val": 29.98 }
+                ],
+                'target_temptation': [ 'integer',
+                                        { "name": "Low", "val": 0},
+                                        { "name": "Medium", "val": 15},
+                                        { "name": "High", "val": 30},
+                                        { "name": "Critical", "val": 40}
+                ]
+            }
 
             for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
                 
@@ -163,7 +192,25 @@ def build_website(api_file, output_dir):
 
                 sort_list.append(f'<nobr>{k}, -{k}</nobr>')
 
-                if k in specials:
+                try:
+
+                    enum_values = v['enum']
+
+                    ev_list = [v['type']]
+
+                    for ev in enum_values:
+
+                        ev_list.append({"name": ev, "val": ev})
+
+                    specials[k] = ev_list
+
+                except KeyError:
+
+                    pass
+
+                        
+
+                if k in specials.keys():
 
                     filters.append(k)
 
@@ -195,9 +242,15 @@ def build_website(api_file, output_dir):
             
             filt_string = json.dumps(filters, indent=2).replace('"','\'')
 
-            for special in specials:
+            picklist_str = '\n'
 
-                new_str = craft_selectize_string(special)
+            for special, sv in specials.items():
+
+                picklist_data_type = sv.pop(0)
+
+                picklist_str += f'var {special}_json = {json.dumps(sv, indent=2)};\n\n'
+
+                new_str = craft_selectize_string(special, picklist_data_type)
 
                 foo = f"  '{special}'"
 
@@ -221,7 +274,7 @@ def build_website(api_file, output_dir):
             with open('templates/template-javascript.js', 'r') as j:
                 js_source_code = j.read().rstrip('\n')
             
-            js_str = ''.join([def_rules_str, js_source_code, 
+            js_str = ''.join([picklist_str, def_rules_str, js_source_code, 
                                 filt_string, '\n});'])
             
             js_str = js_str.replace('REPLACEME', endpoint)

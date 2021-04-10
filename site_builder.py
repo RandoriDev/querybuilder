@@ -10,7 +10,45 @@ import sys
 assert sys.version_info >= (3, 0), "This script requires the use of Python 3"
 
 
-hostname_default_rule='''var rules_REPLACEME = {
+# Api Endpoints that aren't real endpoints so do skip them when encountered
+do_not_includes = ['querybuilder_rule_group_schema', 'querybuilder_rule_group_schema_2',
+                   'querybuilder_rule_group_schema_3', 'querybuilder_rule_group_schema_4',
+                   'querybuilder_rule_schema', 'saved_views_model_custom_in',
+                   'saved_views_patch_in']
+
+# API endpoints that result in a "special" picklist that maps Names to Values
+#   using the "Selectize" feature of jquery querybuilder
+global_specials = {
+    'confidence': [ 'integer',
+                    { "name": "Min", "val": 0 },
+                    { "name": "Low", "val": 25 },
+                    { "name": "Medium", "val":60 },
+                    { "name": "High", "val": 75 },
+                    { "name": "Extreme", "val": 90 },
+                    { "name": "Max", "val": 100 }
+    ],
+    'name_type': [ 'integer',
+                    { "name": "Domain Name", "val": 0 },
+                    { "name": "Hostname", "val": 1 }
+    ],
+    'priority_score': [ 'double',
+                        { "name": "Low", "val": 0 },
+                        { "name": "Medium", "val": 20 },
+                        { "name": "High", "val": 29.98 }
+    ],
+    'target_temptation': [ 'integer',
+                            { "name": "Low", "val": 0},
+                            { "name": "Medium", "val": 15},
+                            { "name": "High", "val": 30},
+                            { "name": "Critical", "val": 40}
+    ]
+}
+
+
+# Default rules for the "all_detections_for_target" API endpoint.
+#  Is intended to illustrate a "complex/compound" query
+
+example_complex_rule='''var rules_REPLACEME = {
   condition: 'AND',
   rules: [{
     id: 'table.confidence',
@@ -32,6 +70,7 @@ hostname_default_rule='''var rules_REPLACEME = {
 '''
 
 
+# Default query for most API endpoints
 default_rule='''var rules_REPLACEME = {
   condition: "AND",
   rules: [
@@ -45,6 +84,7 @@ default_rule='''var rules_REPLACEME = {
 '''
 
 
+# Default query for API endpoints that do not have a "confidence" attribute
 ep_wo_confidence_rule='''var rules_REPLACEME = {
   condition: "AND",
   rules: [
@@ -72,20 +112,11 @@ def copytree(src, dst, symlinks=False, ignore=None):
                 shutil.copy2(s, d)
 
 
-def labelize(field_name):
-
-    lbl = ' '.join(map(lambda s: s.capitalize(),field_name.split('_')))
-
-    return lbl
-
-
 def craft_selectize_string(field_name, picklist_data_type):
-
-    lbl = labelize(field_name, )
 
     ss = '''  {
     id: 'table.xxxfield_namexxx',
-    label: 'xxxlblxxx',
+    label: 'xxxfield_namexxx',
     type: 'xxxdata_typexxx',
     plugin: 'selectize',
     plugin_config: {
@@ -106,25 +137,13 @@ def craft_selectize_string(field_name, picklist_data_type):
     valueSetter: function(rule, value) {
       rule.$el.find('.rule-value-container input')[0].selectize.setValue(value);
     }
-  }'''.replace('xxxfield_namexxx', field_name).replace('xxxlblxxx', lbl).replace('xxxdata_typexxx', picklist_data_type)
+  }'''.replace('xxxfield_namexxx', field_name).replace('xxxdata_typexxx', picklist_data_type)
 
 
     return ss
 
 
 def process_api_file():
-
-
-
-def build_website():
-    with open('templates/template-index-start.html', 'r') as e:
-        html_str_1 = e.read()
-
-    with open('templates/template-index-middle.html', 'r') as e:
-        html_str_2 = e.read()
-
-    with open('templates/template-index-end.html', 'r') as e:
-        html_str_3 = e.read()
 
     sect_str = ''
 
@@ -134,11 +153,6 @@ def build_website():
         datastore = json.load(af)
 
     schemas = datastore['components']['schemas']
-
-    do_not_includes = ['querybuilder_rule_group_schema', 'querybuilder_rule_group_schema_2',
-                       'querybuilder_rule_group_schema_3', 'querybuilder_rule_group_schema_4',
-                       'querybuilder_rule_schema', 'saved_views_model_custom_in',
-                       'saved_views_patch_in']
 
     for dash_endpoint in sorted(schemas.keys()):
 
@@ -158,31 +172,9 @@ def build_website():
 
             sort_list = []
 
-            specials = {
-                'confidence': [ 'integer',
-                                { "name": "Min", "val": 0 },
-                                { "name": "Low", "val": 25 },
-                                { "name": "Medium", "val":60 },
-                                { "name": "High", "val": 75 },
-                                { "name": "Extreme", "val": 90 },
-                                { "name": "Max", "val": 100 }
-                ],
-                'name_type': [ 'integer',
-                                { "name": "Domain Name", "val": 0 },
-                                { "name": "Hostname", "val": 1 }
-                ],
-                'priority_score': [ 'double',
-                                    { "name": "Low", "val": 0 },
-                                    { "name": "Medium", "val": 20 },
-                                    { "name": "High", "val": 29.98 }
-                ],
-                'target_temptation': [ 'integer',
-                                        { "name": "Low", "val": 0},
-                                        { "name": "Medium", "val": 15},
-                                        { "name": "High", "val": 30},
-                                        { "name": "Critical", "val": 40}
-                ]
-            }
+            specials = copy.deepcopy(global_specials)
+
+            endpoint_has_confidence = False
 
             for k,v in sorted(schemas[dash_endpoint]['properties'].items()):
 
@@ -191,6 +183,10 @@ def build_website():
                 if k in ['deleted', 'all_ports']:
 
                     continue
+
+                if k == 'confidence':
+
+                    endpoint_has_confidence = True # good for it!
 
                 sort_list.append(f'<nobr>{k}, -{k}</nobr>')
 
@@ -211,7 +207,6 @@ def build_website():
                     pass
 
 
-
                 if k in specials.keys():
 
                     filters.append(k)
@@ -222,7 +217,7 @@ def build_website():
 
                 filter_dict['id'] = f'table.{k}'
 
-                filter_dict['label'] = labelize(k)
+                filter_dict['label'] = k
 
                 if v['type'] == 'number':
                     filter_dict['type'] = 'double'
@@ -260,17 +255,17 @@ def build_website():
 
                 filt_string = copy.deepcopy(tmpstr)
 
-            if endpoint == 'hostname':
+            if endpoint == 'all_detections_for_target':
 
-                def_rules_str = hostname_default_rule
+                def_rules_str = example_complex_rule
 
-            elif endpoint in ['artifact', 'detection', 'saved_views']:
+            elif endpoint_has_confidence:
 
-                def_rules_str = ep_wo_confidence_rule
+                def_rules_str = default_rule
 
             else:
 
-                def_rules_str = default_rule
+                def_rules_str = ep_wo_confidence_rule
 
 
             with open('templates/template-javascript.js', 'r') as j:
@@ -288,7 +283,7 @@ def build_website():
 
             sort_str = ', '.join(sort_list)
 
-            sort_str = f'{sort_str}\n<section>\n'
+            sort_str = f'{sort_str}\n\n<section>'
 
             with open('templates/template-index-section.html', 'r') as f:
                 sect_str = sect_str + f.read().replace('REPLACEME', endpoint)
@@ -300,9 +295,23 @@ def build_website():
         except KeyError:
             pass
 
+    return (sect_str, js_sources_string)
 
-    full_page = ''.join([html_str_1, sect_str, html_str_2,
-                        js_sources_string, html_str_3])
+
+def build_website():
+    with open('templates/template-index-start.html', 'r') as e:
+        html_str_1 = e.read()
+
+    with open('templates/template-index-middle.html', 'r') as e:
+        html_str_2 = e.read()
+
+    with open('templates/template-index-end.html', 'r') as e:
+        html_str_3 = e.read()
+
+    section_str, js_str = process_api_file()
+    
+    full_page = ''.join([html_str_1, section_str, html_str_2,
+                        js_str, html_str_3])
 
     index_outfile = f'{output_dir}/index.html'
 

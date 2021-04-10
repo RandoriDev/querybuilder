@@ -28,19 +28,27 @@ global_specials = {
                     { "name": "Max", "val": 100 }
     ],
     'name_type': [ 'integer',
-                    { "name": "Domain Name", "val": 0 },
-                    { "name": "Hostname", "val": 1 }
+                   { "name": "Domain Name", "val": 0 },
+                   { "name": "Hostname", "val": 1 }
     ],
     'priority_score': [ 'double',
                         { "name": "Low", "val": 0 },
                         { "name": "Medium", "val": 20 },
                         { "name": "High", "val": 29.98 }
     ],
+    'target_confidence': [ 'integer',
+                           { "name": "Min", "val": 0 },
+                           { "name": "Low", "val": 25 },
+                           { "name": "Medium", "val":60 },
+                           { "name": "High", "val": 75 },
+                           { "name": "Extreme", "val": 90 },
+                           { "name": "Max", "val": 100 }
+    ],
     'target_temptation': [ 'integer',
-                            { "name": "Low", "val": 0},
-                            { "name": "Medium", "val": 15},
-                            { "name": "High", "val": 30},
-                            { "name": "Critical", "val": 40}
+                           { "name": "Low", "val": 0},
+                           { "name": "Medium", "val": 15},
+                           { "name": "High", "val": 30},
+                           { "name": "Critical", "val": 40}
     ]
 }
 
